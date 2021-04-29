@@ -1,0 +1,206 @@
+import pandas as pd
+import numpy as np
+import speech_recognition as sr   
+import time 
+import pickle
+import pickle
+import os
+import numpy as np
+from sklearn.preprocessing import MultiLabelBinarizer
+import warnings
+from flask_cors import CORS
+from flask import Flask,jsonify,request
+from pymongo import MongoClient
+warnings.filterwarnings('ignore')
+# from tensorflow.keras.preprocessing import text
+from flask import Flask , jsonify
+class CustomModelPrediction(object):
+
+  def __init__(self, model, processor):
+    self._model = model
+    self._processor = processor
+  
+  def predict(self, instances, **kwargs):
+    preprocessed_data = self._processor.transform_text(instances)
+    predictions = self._model.predict(preprocessed_data)
+    return predictions.tolist()
+
+  @classmethod
+  def from_path(cls, model_dir):
+    import tensorflow.keras as keras 
+    model = keras.models.load_model(
+      'C:/Users/HP/Desktop/ProjectSem6/VSC/sentiment-analysis/TextSentimentAnalysis/sentiment_model.h5')
+    with open('C:/Users/HP/Desktop/ProjectSem6/VSC/sentiment-analysis/TextSentimentAnalysis/processor_state.pkl', 'rb') as f:
+      processor = pickle.load(f) 
+    return cls(model, processor)
+
+class TextPreprocessor(object):
+  def __init__(self, vocab_size):
+    self._vocab_size = vocab_size
+    self._tokenizer = None
+  
+  def create_tokenizer(self, text_list):
+    tokenizer = text.Tokenizer(num_words=self._vocab_size)
+    tokenizer.fit_on_texts(text_list)
+    self._tokenizer = tokenizer
+
+  def transform_text(self, text_list):
+    text_matrix = self._tokenizer.texts_to_matrix(text_list)
+    return text_matrix
+
+# # #using speech_recognition library in python for converting speech to text
+# r = sr.Recognizer()  
+# try: 
+# # use the microphone as source for input. 
+#     with sr.Microphone() as source: 
+#         #taking 1 second to recognize the background noise for clearer and more effective audio to text translation 
+#         r.adjust_for_ambient_noise(source, duration=1) 
+#         print("Getting an idea of your background noise")
+#         time.sleep(1.1)
+#         #listens for the user's input  
+#         print("Speak now")
+#         audio = r.listen(source)        
+#         # Using ggogle to recognize audio 
+#         text = r.recognize_google(audio) 
+#         # MyText = r.recognize_sphinx(audio) 
+#         text = text.lower() 
+#         print(text)  
+# except sr.RequestError as e: 
+#         text=""
+#         print("Error") 
+# except sr.UnknownValueError: 
+#         text=""
+#         print("unknown error")
+
+
+# text="today was a bad bad bad bad bad day"
+
+
+# test_requests=[
+#     text
+# ]
+
+tag_encoder = MultiLabelBinarizer()
+# tags_encoded = tag_encoder.fit_transform(sentiments_encoded)
+# num_tags = len(tags_encoded[0])
+tag_encoder.classes_=['anger','fear','happiness','happy','love','neutral' ,'relief' ,'sadness',
+ 'surprise' ,'worry']
+# print(tag_encoder.classes_)
+# print(tags_encoded[0])
+
+# Make a prediction on our local model
+# from model_prediction import CustomModelPrediction
+def predict_emotion(text_requests):
+
+    # import tensorflow.keras as keras
+    # model = keras.models.load_model(
+    #   'C:/Users/HP/Desktop/ProjectSem6/VSC/sentiment-analysis/TextSentimentAnalysis/sentiment_model.h5')
+    # with open('C:/Users/HP/Desktop/ProjectSem6/VSC/sentiment-analysis/TextSentimentAnalysis/processor_state.pkl', 'rb') as f:
+    #   processor = pickle.load(f)
+    # return cls(model, processor)
+
+    classifier =CustomModelPrediction.from_path('.')
+    # print("----------------------------------------------")
+    # print(classifier)
+    results = classifier.predict(text_requests)
+    emotion=[]
+    for i in range(len(results)): 
+        for idx,val in enumerate(results[i]): 
+            if val > 0.1: 
+                 emotion.append([val,tag_encoder.classes_[idx]]) 
+    emotion.sort(reverse=True)
+    return emotion[:2]
+
+# def find(): 
+#     emotions=predict_emotion()
+#     for i in emotions:
+#         print(i[1])
+
+# emotions=predict_emotion()
+# emotion1=emotions[0]
+# emotion1=emotion1[1]
+# emotion2=emotions[1]
+# emotion2=emotion2[1]
+# print(emotion1)
+
+
+# from pymongo import MongoClient
+# client=MongoClient("mongodb+srv://test:test@cluster0.nvu4g.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+# db=client.get_database('song_db')
+# # print(db)
+# records=db.song_records
+# print(records.count_documents({}))
+
+# songlist=list(records.find({'emotion':emotion1.upper()}))
+# # print(songlist)
+# import random as r
+# finalSongs=[]
+# for i in range(0,3):
+#       temp={}
+#       temp['name']=songlist[r.randrange(0,len(songlist))]['name']
+#       temp['emotion']=songlist[r.randrange(0,len(songlist))]['emotion']
+#       temp['link']=songlist[r.randrange(0,len(songlist))]['link']
+#       # finalSongs.append(songlist[r.randrange(0,len(songlist))])
+#       finalSongs.append(temp)
+# print(finalSongs)
+# emotions=[emotion1,emotion2]
+app=Flask(__name__)
+CORS(app)
+@app.route('/text',methods=['POST'])
+def index():
+        some_json=request.get_json()
+        text=some_json
+        print("**************************text*****************************")
+        print(text['text'])
+        text_requests=[text['text']]
+        # return jsonify({'you sent':some_json}),201
+        emotions=predict_emotion(text_requests)
+        emotion1=emotions[0]
+        emotion1=emotion1[1]
+        if(emotion1=='happiness'):
+              emotion1="HAPPY"
+        # emotion2=emotions[1]
+        # emotion2=emotion2[1]
+        print(emotion1)
+        client=MongoClient("mongodb+srv://test:test@cluster0.nvu4g.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+        db=client.get_database('song_db')
+        # print(db)
+        records=db.song_records
+        # print(records.count_documents({}))
+
+        songlist=list(records.find({'emotion':emotion1.upper()}))
+        # print(songlist)
+        # print(songlist)
+        import random as r
+        finalSongs=[]
+        song_index=set()
+        while(len(finalSongs)!=3):
+              temp={}
+              temp['name']=songlist[r.randrange(0,len(songlist))]['name']
+              temp['emotion']=songlist[r.randrange(0,len(songlist))]['emotion']
+              temp['link']=songlist[r.randrange(0,len(songlist))]['link']
+              # finalSongs.append(songlist[r.randrange(0,len(songlist))])
+              if(temp not in finalSongs):
+                    finalSongs.append(temp) 
+        # print("-------------")
+        # print(finalSongs)
+        return jsonify({'songs':finalSongs})
+
+
+
+
+
+
+@app.route('/songs')
+def emotion():
+      # return jsonify({'about':'hi'})
+      # return jsonify({'emotion':emotions})
+      return jsonify({'songs':finalSongs})
+      # return finalSongs
+
+@app.route('/text',methods=['POST'])
+def getText():
+      if request.method=='POST':
+            text=request.form
+if __name__=='__main__':
+    app.run(debug =True)

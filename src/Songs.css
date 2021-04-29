@@ -1,0 +1,21 @@
+body{
+    /* background-color: rgba(74, 72, 209, 0.575); */
+    /* background-color: rgba(55, 53, 231, 0.822); */
+    /* background-image:url("https://media.istockphoto.com/videos/dancing-crowd-at-rock-concert-with-their-hands-above-and-cheering-video-id1198823214?b=1&k=6&m=1198823214&s=640x640&h=J1DcAzUzk7FPl9pZc1978iCcokKL-8BuzKdo-U9cROU="); */
+    /* background-image:url("https://c0.wallpaperflare.com/preview/285/1009/176/concery-wallpaper-festival-party.jpg"); */
+    /* background-image: ("/148425"); */
+    /* background-image: url("http://static3.depositphotos.com/1005782/208/i/450/depositphotos_2088021-Red-Pink-Blue-Light-and-Concert-Crowd.jpg") ; */
+    /* background-image: url("./images/band1.png"); */
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed ;
+    background-position: center;
+    background-color: #000066;
+    text-align: center;
+    color: aliceblue;
+    /* font-family: 'Dela Gothic One', cursive; */
+    /* font-family: 'Zilla Slab Highlight', cursive;  */
+    font-family: 'Dela Gothic One', cursive;
+  font-family: 'Open Sans', sans-serif;
+    font-size: 25px; 
+  }
